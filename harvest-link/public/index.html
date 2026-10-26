@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Harvest Link — Smart Food Rescue & Donation Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div class="brand login-brand">
+      <span class="brand-mark">🌿</span>
+      <div>
+        <h1>Harvest Link</h1>
+        <p class="tagline">Rescue food. Feed people. Waste nothing.</p>
+      </div>
+    </div>
+
+    <div class="login-tabs">
+      <button type="button" id="userTabBtn" class="login-tab active">Log in</button>
+      <button type="button" id="registerTabBtn" class="login-tab">Register</button>
+      <button type="button" id="adminTabBtn" class="login-tab">Admin</button>
+    </div>
+
+    <!-- ---- USER LOGIN (Donor / NGO / Volunteer) ---- -->
+    <form id="userLoginForm" class="login-form">
+      <label>Email *
+        <input type="email" id="loginEmail" required placeholder="you@example.com" />
+      </label>
+      <label>Password *
+        <input type="password" id="loginPassword" required placeholder="••••••••" />
+      </label>
+      <p id="userLoginError" class="form-error hidden"></p>
+      <button type="submit" class="btn primary login-submit">Log in</button>
+      <p class="hint login-hint">Demo (after <code>npm run seed</code>): donor@demo.com / ngo@demo.com / volunteer@demo.com — password demo123</p>
+    </form>
+
+    <!-- ---- REGISTER ---- -->
+    <form id="registerForm" class="login-form hidden">
+      <label>Your name (or NGO name) *
+        <input type="text" id="regName" required placeholder="e.g. Priya Sharma" />
+      </label>
+      <label>Email *
+        <input type="email" id="regEmail" required placeholder="you@example.com" />
+      </label>
+      <label>Password * (min 6 characters)
+        <input type="password" id="regPassword" required minlength="6" placeholder="••••••••" />
+      </label>
+      <label>I am a *
+        <select id="regRole" required>
+          <option value="">Select role…</option>
+          <option value="donor">Donor</option>
+          <option value="ngo">NGO</option>
+          <option value="volunteer">Volunteer</option>
+        </select>
+      </label>
+      <p id="registerError" class="form-error hidden"></p>
+      <button type="submit" class="btn primary login-submit">Create account</button>
+      <p class="hint login-hint">NGO accounts must be verified by the admin before they can claim food.</p>
+    </form>
+
+    <!-- ---- ADMIN LOGIN ---- -->
+    <form id="adminLoginForm" class="login-form hidden">
+      <label>Admin email *
+        <input type="email" id="adminUsername" required placeholder="admin@harvestlink.com" />
+      </label>
+      <label>Admin password *
+        <input type="password" id="adminPassword" required placeholder="••••••••" />
+      </label>
+      <p id="adminLoginError" class="form-error hidden"></p>
+      <button type="submit" class="btn primary login-submit">Log in as Admin</button>
+      <p class="hint login-hint">Default admin comes from your .env file (admin@harvestlink.com / admin123).</p>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP (hidden until logged in) ============ -->
+<div id="appScreen" class="hidden">
+
+<!-- ============ HEADER ============ -->
+<header class="site-header">
+  <div class="brand">
+    <span class="brand-mark">🌿</span>
+    <div>
+      <h1>Harvest Link</h1>
+      <p class="tagline">Rescue food. Feed people. Waste nothing.</p>
+    </div>
+  </div>
+
+  <nav class="role-nav" id="roleNav" aria-label="Choose your role">
+    <button class="role-btn" data-role="donor">Donor</button>
+    <button class="role-btn" data-role="ngo">NGO</button>
+    <button class="role-btn" data-role="volunteer">Volunteer</button>
+    <button class="role-btn" data-role="admin" id="adminNavBtn">Admin</button>
+    <button class="role-btn" data-role="dashboard">Dashboard</button>
+  </nav>
+
+  <div class="header-right">
+    <span id="loggedInAs" class="logged-in-as"></span>
+    <button id="bellBtn" class="bell-btn" aria-haspopup="true" aria-expanded="false">
+      🔔 <span id="bellCount" class="bell-count">0</span>
+    </button>
+    <button id="logoutBtn" class="btn ghost small">Log out</button>
+  </div>
+</header>
+
+<!-- ============ NOTIFICATION DROPDOWN ============ -->
+<div id="notifPanel" class="notif-panel hidden">
+  <div class="notif-head">
+    <span>Activity log</span>
+    <button id="clearNotifs" class="link-btn">Clear</button>
+  </div>
+  <ul id="notifList" class="notif-list"></ul>
+</div>
+
+<!-- ============ HERO / LIVE STATS ============ -->
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Node · Express · MongoDB</p>
+    <h2>Every crate saved is a meal that made it.</h2>
+    <p id="quoteBox" class="quote">Loading today's word from the field…</p>
+  </div>
+  <div class="stat-row" id="statRow">
+    <div class="stat">
+      <span class="stat-num" id="statMeals">0</span>
+      <span class="stat-label">units rescued</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="statActive">0</span>
+      <span class="stat-label">active listings</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="statNgo">0</span>
+      <span class="stat-label">verified NGOs</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MAIN ============ -->
+<main id="mainArea">
+
+  <!-- ---- DONOR PANEL ---- -->
+  <section class="panel" id="panel-donor">
+    <div class="panel-grid">
+      <div class="card form-card">
+        <h3>List a donation</h3>
+        <p class="hint">Fields marked * are required. Expiry can't be in the past.</p>
+        <form id="donationForm" novalidate>
+          <label>Your name / restaurant *
+            <input type="text" id="donorName" required placeholder="e.g. Sunrise Bakery" />
+          </label>
+          <label>Food item *
+            <input type="text" id="foodType" required placeholder="e.g. Sourdough loaves" />
+          </label>
+          <div class="field-pair">
+            <label>Quantity *
+              <input type="number" id="quantity" min="1" required placeholder="12" />
+            </label>
+            <label>Unit
+              <select id="unit">
+                <option>servings</option>
+                <option>kg</option>
+                <option>boxes</option>
+                <option>loaves</option>
+                <option>packets</option>
+              </select>
+            </label>
+          </div>
+          <label>Expiry / use-by date *
+            <input type="date" id="expiryDate" required />
+          </label>
+          <label>Pickup location (city / area) *
+            <input type="text" id="pickupLocation" required placeholder="e.g. Sector 14, Rajpura" />
+          </label>
+          <label>Preferred pickup time
+            <input type="time" id="pickupTime" />
+          </label>
+          <label>Photo of the food (optional, max 2 MB)
+            <input type="file" id="foodImage" accept="image/png,image/jpeg,image/webp,image/gif" />
+          </label>
+          <p id="formError" class="form-error hidden"></p>
+          <button type="submit" class="btn primary">Add donation</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>Your listings</h3>
+        <div id="donorList" class="card-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- NGO PANEL ---- -->
+  <section class="panel hidden" id="panel-ngo">
+    <div class="panel-head">
+      <h3>Available donations</h3>
+      <div class="filter-row">
+        <span id="ngoStatusNote" class="hint"></span>
+        <input type="text" id="locationFilter" placeholder="Filter by location…" />
+        <select id="sortDonations">
+          <option value="expiry">Sort: expiry soonest</option>
+          <option value="newest">Sort: newest first</option>
+          <option value="quantity">Sort: quantity high→low</option>
+        </select>
+      </div>
+    </div>
+    <div id="ngoList" class="card-list grid"></div>
+  </section>
+
+  <!-- ---- VOLUNTEER PANEL ---- -->
+  <section class="panel hidden" id="panel-volunteer">
+    <h3>Pickups in progress</h3>
+    <p class="hint">Claimed donations appear here. Mark them picked up, then delivered.</p>
+    <div id="volunteerList" class="card-list grid"></div>
+  </section>
+
+  <!-- ---- ADMIN PANEL ---- -->
+  <section class="panel hidden" id="panel-admin">
+    <div class="panel-grid">
+      <div class="card">
+        <h3>NGO verification</h3>
+        <div id="ngoTable" class="card-list"></div>
+        <form id="addNgoForm" class="inline-form">
+          <input type="text" id="newNgoName" placeholder="Register new NGO…" required />
+          <button class="btn ghost" type="submit">Add</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Full donation log</h3>
+        <div id="adminLog" class="card-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- DASHBOARD PANEL ---- -->
+  <section class="panel hidden" id="panel-dashboard">
+    <h3>Analytics dashboard</h3>
+    <div class="dash-grid">
+      <div class="card">
+        <h4>Status breakdown</h4>
+        <div id="statusBars" class="bar-list"></div>
+      </div>
+      <div class="card">
+        <h4>Top 3 donors by units rescued</h4>
+        <ol id="topDonors" class="top-list"></ol>
+      </div>
+      <div class="card">
+        <h4>Expiry watch</h4>
+        <p class="hint">Listings expiring within 24 hours.</p>
+        <div id="expiryWatch" class="card-list"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>Harvest Link — Node.js + Express + MongoDB backend, JWT login, Multer uploads, vanilla JS front end.</p>
+</footer>
+
+<div id="toastHost" class="toast-host"></div>
+
+</div> <!-- /#appScreen -->
+
+<script src="app.js"></script>
+</body>
+</html>
